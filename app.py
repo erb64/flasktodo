@@ -160,13 +160,18 @@ def dashboard():
 	#create cursor
 	cur = mysql.connection.cursor()
 
-	#get Articles
-	result = cur.execute("SELECT * FROM articles")
+	#get todo Articles
+	result = cur.execute("SELECT * FROM articles WHERE valid = TRUE")
+	articles_todo = cur.fetchall()
 
-	articles = cur.fetchall()
+	#get todo Articles
+	result = cur.execute("SELECT * FROM articles WHERE valid = FALSE")
+	articles_done = cur.fetchall()
+
+
 
 	if result > 0:
-		return render_template('dashboard.html', articles=articles)
+		return render_template('dashboard.html', articles_todo=articles_todo, articles_done=articles_done)
 	else:
 		msg = 'No Articles Found'
 		return render_template('dashboard.html', msg=msg)
@@ -253,7 +258,8 @@ def delete_article(id):
 	cur = mysql.connection.cursor()
 
 	#execute
-	cur.execute("DELETE FROM articles WHERE id= %s", [id])
+	# cur.execute("DELETE FROM articles WHERE id= %s", [id])
+	cur.execute("UPDATE articles SET valid=FALSE WHERE id=%s", (id))
 
 	#commit
 	mysql.connection.commit()
@@ -265,6 +271,26 @@ def delete_article(id):
 
 	return redirect(url_for('dashboard'))
 
+#delete article
+@app.route('/reactivate_article/<string:id>', methods = ['POST'])
+@is_logged_in
+def reactivate_article(id):
+	#create cursor
+	cur = mysql.connection.cursor()
+
+	#execute
+	# cur.execute("DELETE FROM articles WHERE id= %s", [id])
+	cur.execute("UPDATE articles SET valid=TRUE WHERE id=%s", (id))
+
+	#commit
+	mysql.connection.commit()
+
+	#close connection
+	cur.close()
+
+	flash('Article Reactivated', 'success')
+
+	return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
 	app.secret_key = 'super secret key'
