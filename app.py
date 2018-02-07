@@ -34,12 +34,14 @@ def articles():
 	cur = mysql.connection.cursor()
 
 	#get Articles
-	result = cur.execute("SELECT * FROM articles")
+	result = cur.execute("SELECT * FROM articles WHERE is_valid=TRUE")
+	articles_todo = cur.fetchall()
 
-	articles = cur.fetchall()
+	result = cur.execute("SELECT * FROM articles WHERE is_valid=FALSE")
+	articles_done = cur.fetchall()
 
 	if result > 0:
-		return render_template('articles.html', articles=articles)
+		return render_template('articles.html', articles_todo=articles_todo, articles_done = articles_done)
 	else:
 		msg = 'No Articles Found'
 		return render_template('articles.html', msg=msg)
@@ -161,16 +163,16 @@ def dashboard():
 	cur = mysql.connection.cursor()
 
 	#get todo Articles
-	result = cur.execute("SELECT * FROM articles WHERE valid = TRUE")
+	result_todo = cur.execute("SELECT * FROM articles WHERE is_valid=TRUE")
 	articles_todo = cur.fetchall()
 
 	#get todo Articles
-	result = cur.execute("SELECT * FROM articles WHERE valid = FALSE")
+	result_done = cur.execute("SELECT * FROM articles WHERE is_valid=FALSE")
 	articles_done = cur.fetchall()
 
 
 
-	if result > 0:
+	if result_todo > 0 or result_done > 0:
 		return render_template('dashboard.html', articles_todo=articles_todo, articles_done=articles_done)
 	else:
 		msg = 'No Articles Found'
@@ -259,7 +261,7 @@ def delete_article(id):
 
 	#execute
 	# cur.execute("DELETE FROM articles WHERE id= %s", [id])
-	cur.execute("UPDATE articles SET valid=FALSE WHERE id=%s", (id))
+	cur.execute("UPDATE articles SET is_valid=FALSE WHERE id=%s", (id))
 
 	#commit
 	mysql.connection.commit()
@@ -280,7 +282,7 @@ def reactivate_article(id):
 
 	#execute
 	# cur.execute("DELETE FROM articles WHERE id= %s", [id])
-	cur.execute("UPDATE articles SET valid=TRUE WHERE id=%s", (id))
+	cur.execute("UPDATE articles SET is_valid=TRUE WHERE id=%s", (id))
 
 	#commit
 	mysql.connection.commit()

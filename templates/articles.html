@@ -2,16 +2,12 @@
 
 {% block body %}
 	<h1>TO-DO</h1>
-	{% for article in articles %}
-		{% if article.valid %}
-			<li class="list-group-item"><a href="article/{{article.id}}">{{article.title}}</a></li>
-		{% endif %}
+	{% for article in articles_todo %}
+		<li class="list-group-item"><a href="article/{{article.id}}">{{article.title}}</a></li>
 	{% endfor %}
 	<br><br><br>
 	<h1>DONE</h1>
-	{% for article in articles %}
-		{% if not article.valid %}
-			<li class="list-group-item"><a href="article/{{article.id}}">{{article.title}}</a></li>
-		{% endif %}
+	{% for article in articles_done %}
+		<li class="list-group-item"><a href="article/{{article.id}}">{{article.title}}</a></li>
 	{% endfor %}
 {% endblock %}
