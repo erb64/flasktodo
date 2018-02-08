@@ -15,3 +15,8 @@ class Articles(db.Model):
 
     def __str__(self):
         return self.title
+
+    def __init__(self, title, author, body):
+        self.title = title
+        self.author = author
+        self.body = body

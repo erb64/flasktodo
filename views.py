@@ -110,34 +110,52 @@ def login():
 		username = request.form['username']
 		password_candidate = request.form['password']
 
-		#create cursor
-		cur = mysql.connection.cursor()
+		user = Users.query.filter(User.username == username).first()
 
-		#get user by username
-		result = cur.execute("SELECT * FROM users WHERE username = %s", [username])
-
-		if result > 0:
-			# get stored hash
-			data = cur.fetchone()
-			password = data['password']
+		if(user):
+			password = user['password']
 
 			if sha256_crypt.verify(password_candidate,password):
-				# app.logger.info('PASSWORD MATCHED')
-				#PASSED
 				session['logged_in'] = True
 				session['username'] = username
 
 				flash('You are now logged in', 'success')
 				return redirect(url_for('dashboard'))
-			else:
-				# app.logger.info('PASSWORD NOT MATCHED')
-				error = 'Invalid login'
-				return render_template('login.html',error=error)
-			cur.close()
-		else:
+		else: 
 			error = 'Username not found'
 			# app.logger.info('NO USER')
 			return render_template('login.html',error=error)
+
+
+		#create cursor
+		# cur = mysql.connection.cursor()
+
+		# #get user by username
+		# result = cur.execute("SELECT * FROM users WHERE username = %s", [username])
+
+
+		# if result > 0:
+		# 	# get stored hash
+		# 	data = cur.fetchone()
+		# 	password = data['password']
+
+		# 	if sha256_crypt.verify(password_candidate,password):
+		# 		# app.logger.info('PASSWORD MATCHED')
+		# 		#PASSED
+		# 		session['logged_in'] = True
+		# 		session['username'] = username
+
+		# 		flash('You are now logged in', 'success')
+		# 		return redirect(url_for('dashboard'))
+		# 	else:
+		# 		# app.logger.info('PASSWORD NOT MATCHED')
+		# 		error = 'Invalid login'
+		# 		return render_template('login.html',error=error)
+		# 	cur.close()
+		# else:
+		# 	error = 'Username not found'
+		# 	# app.logger.info('NO USER')
+		# 	return render_template('login.html',error=error)
 
 	return render_template('login.html')
 
@@ -163,26 +181,35 @@ def logout():
 @app.route('/dashboard')
 @is_logged_in
 def dashboard():
-	#create cursor
-	cur = mysql.connection.cursor()
+	articles_todo = Articles.query.filter(Articles.active == True).all()
+	articles_done = Articles.query.filter(Articles.active == False).all()
 
-	#get todo Articles
-	result_todo = cur.execute("SELECT * FROM articles WHERE active=TRUE")
-	articles_todo = cur.fetchall()
-
-	#get todo Articles
-	result_done = cur.execute("SELECT * FROM articles WHERE active=FALSE")
-	articles_done = cur.fetchall()
-
-
-
-	if result_todo > 0 or result_done > 0:
-		return render_template('dashboard.html', articles_todo=articles_todo, articles_done=articles_done)
+	if(articles_todo and articles_done):
+		return render_template('dashboard.html', articles_todo=articles_todo, articles_done = articles_done)
 	else:
 		msg = 'No Articles Found'
 		return render_template('dashboard.html', msg=msg)
 
-	cur.close()
+	# #create cursor
+	# cur = mysql.connection.cursor()
+
+	# #get todo Articles
+	# result_todo = cur.execute("SELECT * FROM articles WHERE active=TRUE")
+	# articles_todo = cur.fetchall()
+
+	# #get todo Articles
+	# result_done = cur.execute("SELECT * FROM articles WHERE active=FALSE")
+	# articles_done = cur.fetchall()
+
+
+
+	# if result_todo > 0 or result_done > 0:
+	# 	return render_template('dashboard.html', articles_todo=articles_todo, articles_done=articles_done)
+	# else:
+	# 	msg = 'No Articles Found'
+	# 	return render_template('dashboard.html', msg=msg)
+
+	# cur.close()
 
 class ArticleForm(Form):
 	title = StringField('Title', [validators.Length(min=1, max=200)])
@@ -195,18 +222,23 @@ def add_article():
 	if request.method == 'POST' and form.validate():
 		title = form.title.data
 		body = form.body.data
+		author = session['username']
 
-		#create cursor
-		cur = mysql.connection.cursor()
+		article = Articles(title, body, author)
+		db.session.add(article)
+		db.session.commit()
 
-		#execute
-		cur.execute("INSERT INTO articles(title, body, author) VALUES(%s, %s, %s)", (title, body, session['username']))
+		# #create cursor
+		# cur = mysql.connection.cursor()
 
-		#commit to database
-		mysql.connection.commit()
+		# #execute
+		# cur.execute("INSERT INTO articles(title, body, author) VALUES(%s, %s, %s)", (title, body, session['username']))
 
-		#close connection
-		cur.close()
+		# #commit to database
+		# mysql.connection.commit()
+
+		# #close connection
+		# cur.close()
 
 		flash('Article Created', 'success')
 
@@ -219,13 +251,15 @@ def add_article():
 @is_logged_in
 def edit_article(id):
 
+	article = Articles.query.filter(Articles.id == id).first()
+
 	# create cursor
-	cur=mysql.connection.cursor()
+	# cur=mysql.connection.cursor()
 
-	#get article by id
-	result = cur.execute("SELECT * FROM articles WHERE id= %s", [id])
+	# #get article by id
+	# result = cur.execute("SELECT * FROM articles WHERE id= %s", [id])
 
-	article = cur.fetchone()
+	# article = cur.fetchone()
 
 	#get form
 	form = ArticleForm(request.form)
@@ -238,17 +272,20 @@ def edit_article(id):
 		title = request.form['title']
 		body = request.form['body']
 
+		article = Articles.query.filter_by(id=id).update(dict(title=title))
+		article = Articles.query.filter_by(id=id).update(dict(body=body))
+		db.session.commit()
 		#create cursor
-		cur = mysql.connection.cursor()
+		# cur = mysql.connection.cursor()
 
-		#execute
-		cur.execute("UPDATE articles SET title=%s, body=%s WHERE id = %s", (title, body, id))
+		# #execute
+		# cur.execute("UPDATE articles SET title=%s, body=%s WHERE id = %s", (title, body, id))
 
-		#commit to database
-		mysql.connection.commit()
+		# #commit to database
+		# mysql.connection.commit()
 
 		#close connection
-		cur.close()
+		# cur.close()
 
 		flash('Article Updated', 'success')
 
@@ -260,20 +297,22 @@ def edit_article(id):
 @app.route('/delete_article/<string:id>', methods = ['POST'])
 @is_logged_in
 def delete_article(id):
+
+	article = Articles.query.filter_by(id=id).update(dict(active=False))
 	#create cursor
-	cur = mysql.connection.cursor()
+	# cur = mysql.connection.cursor()
 
-	#execute
-	# cur.execute("DELETE FROM articles WHERE id= %s", [id])
-	cur.execute("UPDATE articles SET active=FALSE WHERE id=%s", (id))
+	# #execute
+	# # cur.execute("DELETE FROM articles WHERE id= %s", [id])
+	# cur.execute("UPDATE articles SET active=FALSE WHERE id=%s", (id))
 
-	#commit
-	mysql.connection.commit()
+	# #commit
+	# mysql.connection.commit()
 
-	#close connection
-	cur.close()
+	# #close connection
+	# cur.close()
 
-	flash('Article Deleted', 'success')
+	flash('Task Completed', 'success')
 
 	return redirect(url_for('dashboard'))
 
@@ -281,20 +320,22 @@ def delete_article(id):
 @app.route('/reactivate_article/<string:id>', methods = ['POST'])
 @is_logged_in
 def reactivate_article(id):
+
+	article = Articles.query.filter_by(id=id).update(dict(active=True))
 	#create cursor
-	cur = mysql.connection.cursor()
+	# cur = mysql.connection.cursor()
 
-	#execute
-	# cur.execute("DELETE FROM articles WHERE id= %s", [id])
-	cur.execute("UPDATE articles SET active=TRUE WHERE id=%s", (id))
+	# #execute
+	# # cur.execute("DELETE FROM articles WHERE id= %s", [id])
+	# cur.execute("UPDATE articles SET active=TRUE WHERE id=%s", (id))
 
-	#commit
-	mysql.connection.commit()
+	# #commit
+	# mysql.connection.commit()
 
-	#close connection
-	cur.close()
+	# #close connection
+	# cur.close()
 
-	flash('Article Reactivated', 'success')
+	flash('Task Reactivated', 'success')
 
 	return redirect(url_for('dashboard'))
 
