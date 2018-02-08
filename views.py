@@ -7,8 +7,8 @@ from flask_sqlalchemy import SQLAlchemy
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 from passlib.hash import sha256_crypt
 from functools import wraps
-from app import app
-from models.user_model import User
+from app import app, db
+from models.user_model import Users
 from models.article_model import Articles
 
 
@@ -81,8 +81,8 @@ def register():
 		username = form.username.data
 		password = sha256_crypt.encrypt(str(form.password.data))
 
-		a_user = User(name, email, username, password) #fix
-		db.session.add(user)
+		a_user = Users(name, email, username, password) #fix
+		db.session.add(a_user)
 		db.session.commit()
 
 		#create cursor
@@ -110,10 +110,10 @@ def login():
 		username = request.form['username']
 		password_candidate = request.form['password']
 
-		user = Users.query.filter(User.username == username).first()
+		user = Users.query.filter(Users.username == username).first()
 
 		if(user):
-			password = user['password']
+			password = user.password
 
 			if sha256_crypt.verify(password_candidate,password):
 				session['logged_in'] = True
@@ -121,7 +121,7 @@ def login():
 
 				flash('You are now logged in', 'success')
 				return redirect(url_for('dashboard'))
-		else: 
+		else:
 			error = 'Username not found'
 			# app.logger.info('NO USER')
 			return render_template('login.html',error=error)
@@ -224,7 +224,7 @@ def add_article():
 		body = form.body.data
 		author = session['username']
 
-		article = Articles(title, body, author)
+		article = Articles(title, author, body)
 		db.session.add(article)
 		db.session.commit()
 
@@ -299,6 +299,9 @@ def edit_article(id):
 def delete_article(id):
 
 	article = Articles.query.filter_by(id=id).update(dict(active=False))
+	db.session.commit()
+
+
 	#create cursor
 	# cur = mysql.connection.cursor()
 
@@ -322,6 +325,7 @@ def delete_article(id):
 def reactivate_article(id):
 
 	article = Articles.query.filter_by(id=id).update(dict(active=True))
+	db.session.commit()
 	#create cursor
 	# cur = mysql.connection.cursor()
 
@@ -340,4 +344,5 @@ def reactivate_article(id):
 	return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
+	app.secret_key = 'super secret key'
 	app.run(debug=True)

@@ -1,4 +1,5 @@
 from app import db
+from datetime import datetime
 
 class Articles(db.Model):
     __tablename__= 'articles'
@@ -20,3 +21,5 @@ class Articles(db.Model):
         self.title = title
         self.author = author
         self.body = body
+        self.create_date = datetime.now()
+        self.active = True 

@@ -29,7 +29,7 @@ app.config['DEBUG'] = True
 db = SQLAlchemy(app)
 
 def init_db():
-	from models.user_model import User
+	from models.user_model import Users
 	from models.article_model import Articles
 	db.create_all()
 
