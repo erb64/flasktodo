@@ -7,6 +7,10 @@ from flask_sqlalchemy import SQLAlchemy
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 from passlib.hash import sha256_crypt
 from functools import wraps
+import os
+
+db_path = os.path.join(os.path.dirname(__file__), 'app.db')
+db_uri = 'sqlite:///{}'.format(db_path)
 
 app = Flask(__name__)
 
@@ -22,9 +26,11 @@ app = Flask(__name__)
 
 # init SQLAlchemy
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/myflaskapp.db'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:123456@localhost/myflaskapp'
+app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS']= False
 app.config['DEBUG'] = True
+app.config['SECRET_KEY'] = 'super secret'
+
 
 db = SQLAlchemy(app)
 
